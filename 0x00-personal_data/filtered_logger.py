@@ -10,11 +10,16 @@ from mysql.connector import connection
 
 PII_FIELDS = ('name', 'email', 'password', 'ssn', 'phone')
 
-def filter_datum(fields: List[str], redaction: str, message: str, separator: str) -> str:
+
+def filter_datum(fields: List[str],
+                 redaction: str,
+                 message: str,
+                 separator: str) -> str:
     """ filter data """
     temp = message
     for field in fields:
-        temp = re.sub(field + "=.*?" + separator, field + "=" + redaction + separator, temp)
+        temp = re.sub(field + "=.*?" + separator,
+                      field + "=" + redaction + separator, temp)
 
     return temp
 
@@ -36,6 +41,7 @@ class RedactingFormatter(logging.Formatter):
         return filter_datum(self.fields, self.REDACTION, super(
             RedactingFormatter, self).format(record), self.SEPARATOR)
 
+
 def get_logger() -> logging.Logger:
     """ logs user data """
     logger = logging.getLogger('user_data')
@@ -47,15 +53,40 @@ def get_logger() -> logging.Logger:
     logger.addHandler(stream_handler)
     return logger
 
+
 def get_db() -> connection.MySQLConnection:
     """ connect to mysql server """
-    username = environ.get("PERSONAL_DATA_DB_USERNAME")
-    password = environ.get("PERSONAL_DATA_DB_PASSWORD")
-    host = environ.get("PERSONAL_DATA_DB_HOST")
+    username = environ.get("PERSONAL_DATA_DB_USERNAME", "root")
+    password = environ.get("PERSONAL_DATA_DB_PASSWORD", "")
+    host = environ.get("PERSONAL_DATA_DB_HOST", "localhost")
     db = environ.get("PERSONAL_DATA_DB_NAME")
 
     return connection.MySQLConnection(
-            user=username,
+            user=username.strip(),
             password=password,
-            host=host,
+            host=host.strip(),
             database=db)
+
+
+def main():
+    """ retrieve all rows in the user table """
+    db = get_db()
+    curr = db.cursor()
+    query = 'SELECT * FROM users;'
+    curr.execute(query)
+    data = curr.fetchall()
+
+    logger = get_logger()
+
+    for row in data:
+        fields = 'name={}; email={}; phone={}; ssn={};'\
+                'password={}, ip={}; last_login={}; user_agent={}'
+        field = fields.format(row[0], row[1], row[2], row[3],
+                              row[4], row[5], row[6], row[7])
+        logger.info(fields)
+    curr.close()
+    db.close()
+
+
+if __name__ == '__main__':
+    main()
