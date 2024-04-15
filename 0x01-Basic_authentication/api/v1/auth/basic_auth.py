@@ -39,3 +39,11 @@ class BasicAuth(Auth):
         """ extract user email and password from the base64
         decorded value
         """
+        if not decoded_base64_authorization_header:
+            return None, None
+        if not isinstance(decoded_base64_authorization_header, str):
+            return None, None
+        if ':' not in decoded_base64_authorization_header:
+            return None, None
+        header = decoded_base64_authorization_header.split(':')
+        return header[0], header[1]
