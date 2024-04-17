@@ -4,6 +4,11 @@
 from api.v1.views import app_views
 from flask import abort, jsonify, request
 from models.user import User
+from os import getenv
+
+if getenv("AUTH_TYPE") == 'session_auth':
+    from api.v1.auth.session_auth import SessionAuth
+    auth = SessionAuth()
 
 
 @app_views.route('/users', methods=['GET'], strict_slashes=False)
@@ -27,12 +32,10 @@ def view_one_user(user_id: str = None) -> str:
     """
     if user_id == 'me':
         if request.current_user is None:
-            abort(401)
+            abort(404)
         else:
             return jsonify(request.current_user.to_json())
 
-    if user_id is None:
-        abort(404)
     user = User.get(user_id)
     if user is None:
         abort(404)
