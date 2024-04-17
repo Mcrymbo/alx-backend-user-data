@@ -33,7 +33,17 @@ class SessionAuth(Auth):
     def current_user(self, request=None):
         """ returns user based on cookie id """
         session_id = self.session_cookie(request)
-        if session_id:
-            user_id = self.user_id_for_session_id(session_id)
-            if user_id:
-                return User.get(user_id)
+        user_id = self.user_id_for_session_id(session_id)
+
+        return User.get(user_id)
+
+    def destroy_session(self, request=None):
+        """ deletes a user """
+        if not request:
+            return False
+        cookie = self.session_cookie(request)
+        if not cookie or not self.user_id_for_session_id(cookie):
+            return False
+
+        del self.user_id_for_session_id[cookie]
+        return True
