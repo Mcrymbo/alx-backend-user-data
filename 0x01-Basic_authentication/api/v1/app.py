@@ -22,6 +22,7 @@ else:
     from api.v1.auth.auth import Auth
     auth = Auth()
 
+
 @app.before_request
 def request_filter() -> None:
     """ handles before_request in flask """
@@ -35,16 +36,19 @@ def request_filter() -> None:
             if auth.current_user(request) is None:
                 abort(403)
 
+
 @app.errorhandler(404)
 def not_found(error) -> str:
     """ Not found handler
     """
     return jsonify({"error": "Not found"}), 404
 
+
 @app.errorhandler(401)
 def unauthorized_access(error) -> str:
     """ unauthorized error """
     return jsonify({"error": "Unauthorized"}), 401
+
 
 @app.errorhandler(403)
 def forbidden_access(error) -> str:
